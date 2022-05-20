@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const strip = require('stripe');
 
 const app = express();
 const port = process.env.PORT || 5000
@@ -132,9 +133,14 @@ async function run() {
             else {
                 return res.status(403).send({ message: 'Forbidden access' });
             }
+        });
+
+        app.get('/booking/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollection.findOne(query);
+            res.send(booking);
         })
-
-
         // Api convention
         app.post('/booking', async (req, res) => {
             const booking = req.body;
@@ -146,6 +152,7 @@ async function run() {
             const result = await bookingCollection.insertOne(booking);
             return res.send({ success: true, result });
         });
+
 
         app.get('/doctor', verifyJWT, async (req, res) => {
             const doctors = await doctorCollection.find().toArray();
